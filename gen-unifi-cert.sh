@@ -2,8 +2,8 @@
 # Modified script from here: https://github.com/FarsetLabs/letsencrypt-helper-scripts/blob/master/letsencrypt-unifi.sh
 # Modified by: Brielle Bruns <bruns@2mbit.com>
 # Download URL: https://source.sosdg.org/brielle/lets-encrypt-scripts
-# Version: 1.6
-# Last Changed: 05/29/2018
+# Version: 1.7
+# Last Changed: 09/26/2018
 # 02/02/2016: Fixed some errors with key export/import, removed lame docker requirements
 # 02/27/2016: More verbose progress report
 # 03/08/2016: Add renew option, reformat code, command line options
@@ -11,6 +11,7 @@
 # 10/23/2017: Apparently don't need the ace.jar parts, so disable them
 # 02/04/2018: LE disabled tls-sni-01, so switch to just tls-sni, as certbot 0.22 and later automatically fall back to http/80 for auth
 # 05/29/2018: Integrate patch from Donald Webster <fryfrog[at]gmail.com> to cleanup and improve tests
+# 09/26/2018: Change from TLS to HTTP authenticator
 
 # Location of LetsEncrypt binary we use.  Leave unset if you want to let it find automatically
 #LEBINARY="/usr/src/letsencrypt/certbot-auto"
@@ -103,9 +104,9 @@ else
 fi
 
 if [[ ${onlyinsert} != "yes" ]]; then
-  echo "Firing up standalone authenticator on TCP port 443 and requesting cert..."
+  echo "Firing up standalone authenticator on TCP port 80 and requesting cert..."
   ${LEBINARY} --server https://acme-v01.api.letsencrypt.org/directory \
-              --agree-tos --standalone --preferred-challenges tls-sni ${LEOPTIONS}
+              --agree-tos --standalone --preferred-challenges http ${LEOPTIONS}
 fi
 
 if [[ ${onlyinsert} != "yes" ]] && md5sum -c "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem.md5" &>/dev/null; then
