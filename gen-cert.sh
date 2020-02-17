@@ -97,7 +97,7 @@ done
 
 
 ${LEBINARY} ${email} \
-        --server https://acme-v01.api.letsencrypt.org/directory \
+        --server https://acme-v02.api.letsencrypt.org/directory \
         --agree-tos \
         --renew-by-default \
         ${AUTH} \
