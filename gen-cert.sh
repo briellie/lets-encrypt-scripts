@@ -1,6 +1,6 @@
 #!/bin/bash
 # Easy letsencrypt certs using a bash script.
-# v1.4 - 03/21/2017
+# v1.5 - 02/16/2020
 # By Brielle Bruns <bruns@2mbit.com>
 # http://www.sosdg.org
 
