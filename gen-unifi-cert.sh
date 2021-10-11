@@ -2,7 +2,7 @@
 # Modified script from here: https://github.com/FarsetLabs/letsencrypt-helper-scripts/blob/master/letsencrypt-unifi.sh
 # Modified by: Brielle Bruns <bruns@2mbit.com>
 # Download URL: https://source.sosdg.org/brielle/lets-encrypt-scripts
-# Version: 1.92
+# Version: 1.99
 # Last Changed: 10/10/2021
 # 02/02/2016: Fixed some errors with key export/import, removed lame docker requirements
 # 02/27/2016: More verbose progress report
@@ -13,7 +13,7 @@
 # 05/29/2018: Integrate patch from Donald Webster <fryfrog[at]gmail.com> to cleanup and improve tests
 # 09/26/2018: Change from TLS to HTTP authenticator
 # 09/22/2021: Update root certs
-# 10/10/2021: Split out import process for root certs
+# 10/10/2021: Split out import process for root certs, and fix quirkiness with cert chains
 
 # Location of LetsEncrypt binary we use.  Leave unset if you want to let it find automatically
 #LEBINARY="/usr/src/letsencrypt/certbot-auto"
