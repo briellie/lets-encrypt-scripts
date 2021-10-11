@@ -197,7 +197,7 @@ _EOF
   #echo "Using openssl to prepare certificate..."
   #cat "/etc/letsencrypt/live/${MAINDOMAIN}/chain.pem" >> "${CATEMPFILE}"
   openssl pkcs12 -export  -passout pass:aircontrolenterprise \
-          -in "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem" \
+          -in "/etc/letsencrypt/live/${MAINDOMAIN}/fullchain.pem" \
           -inkey "/etc/letsencrypt/live/${MAINDOMAIN}/privkey.pem" \
           -out "${TEMPFILE}" -name unifi
   
