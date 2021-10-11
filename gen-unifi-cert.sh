@@ -13,11 +13,15 @@
 # 05/29/2018: Integrate patch from Donald Webster <fryfrog[at]gmail.com> to cleanup and improve tests
 # 09/26/2018: Change from TLS to HTTP authenticator
 # 09/22/2021: Update root certs
+# 10/10/2021: Split out import process for root certs
 
 # Location of LetsEncrypt binary we use.  Leave unset if you want to let it find automatically
 #LEBINARY="/usr/src/letsencrypt/certbot-auto"
 
 PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+KEYSTORE=/usr/lib/unifi/data/keystore
+
 
 function usage() {
   echo "Usage: $0 -d <domain> [-e <email>] [-r] [-i]"
@@ -25,6 +29,7 @@ function usage() {
   echo "  -e <email>: Email address to use for certificate."
   echo "  -r: Renew domain."
   echo "  -i: Insert only, use to force insertion of certificate."
+  echo "  -a: use ace.jar for insert instead of keytool."
 }
 
 while getopts "hird:e:" opt; do
@@ -117,8 +122,9 @@ else
   echo "Cert has changed or -i option was used, updating controller..."
   TEMPFILE=$(mktemp)
   CATEMPFILE=$(mktemp)
+  INTERMEDTEMPFILE=$(mktemp)
 
-  # ISRG Root X1 and LE R3 certs to inject as well
+  # ISRG Root X1
   cat > "${CATEMPFILE}" <<'_EOF'
 -----BEGIN CERTIFICATE-----
 MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
@@ -153,31 +159,72 @@ emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
 -----END CERTIFICATE-----
 _EOF
 
+  # LE R3 Intermediary
+  cat > "${INTERMEDTEMPFILE}" <<'_EOF'
+-----BEGIN CERTIFICATE-----
+MIIFFjCCAv6gAwIBAgIRAJErCErPDBinU/bWLiWnX1owDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMjAwOTA0MDAwMDAw
+WhcNMjUwOTE1MTYwMDAwWjAyMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3Mg
+RW5jcnlwdDELMAkGA1UEAxMCUjMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+AoIBAQC7AhUozPaglNMPEuyNVZLD+ILxmaZ6QoinXSaqtSu5xUyxr45r+XXIo9cP
+R5QUVTVXjJ6oojkZ9YI8QqlObvU7wy7bjcCwXPNZOOftz2nwWgsbvsCUJCWH+jdx
+sxPnHKzhm+/b5DtFUkWWqcFTzjTIUu61ru2P3mBw4qVUq7ZtDpelQDRrK9O8Zutm
+NHz6a4uPVymZ+DAXXbpyb/uBxa3Shlg9F8fnCbvxK/eG3MHacV3URuPMrSXBiLxg
+Z3Vms/EY96Jc5lP/Ooi2R6X/ExjqmAl3P51T+c8B5fWmcBcUr2Ok/5mzk53cU6cG
+/kiFHaFpriV1uxPMUgP17VGhi9sVAgMBAAGjggEIMIIBBDAOBgNVHQ8BAf8EBAMC
+AYYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMBMBIGA1UdEwEB/wQIMAYB
+Af8CAQAwHQYDVR0OBBYEFBQusxe3WFbLrlAJQOYfr52LFMLGMB8GA1UdIwQYMBaA
+FHm0WeZ7tuXkAXOACIjIGlj26ZtuMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcw
+AoYWaHR0cDovL3gxLmkubGVuY3Iub3JnLzAnBgNVHR8EIDAeMBygGqAYhhZodHRw
+Oi8veDEuYy5sZW5jci5vcmcvMCIGA1UdIAQbMBkwCAYGZ4EMAQIBMA0GCysGAQQB
+gt8TAQEBMA0GCSqGSIb3DQEBCwUAA4ICAQCFyk5HPqP3hUSFvNVneLKYY611TR6W
+PTNlclQtgaDqw+34IL9fzLdwALduO/ZelN7kIJ+m74uyA+eitRY8kc607TkC53wl
+ikfmZW4/RvTZ8M6UK+5UzhK8jCdLuMGYL6KvzXGRSgi3yLgjewQtCPkIVz6D2QQz
+CkcheAmCJ8MqyJu5zlzyZMjAvnnAT45tRAxekrsu94sQ4egdRCnbWSDtY7kh+BIm
+lJNXoB1lBMEKIq4QDUOXoRgffuDghje1WrG9ML+Hbisq/yFOGwXD9RiX8F6sw6W4
+avAuvDszue5L3sz85K+EC4Y/wFVDNvZo4TYXao6Z0f+lQKc0t8DQYzk1OXVu8rp2
+yJMC6alLbBfODALZvYH7n7do1AZls4I9d1P4jnkDrQoxB3UqQ9hVl3LEKQ73xF1O
+yK5GhDDX8oVfGKF5u+decIsH4YaTw7mP3GFxJSqv3+0lUFJoi5Lc5da149p90Ids
+hCExroL1+7mryIkXPeFM5TgO9r0rvZaBFOvV2z0gp35Z0+L4WPlbuEjN/lxPFin+
+HlUjr8gRsI3qfJOQFy/9rKIJR0Y/8Omwt/8oTWgy1mdeHmmjk7j1nYsvC9JSQ6Zv
+MldlTTKB3zhThV1+XWYp6rjd5JW1zbVWEkLNxE7GJThEUG3szgBVGP7pSWTUTsqX
+nLRbwHOoq7hHwg==
+-----END CERTIFICATE-----
+_EOF
+
   md5sum "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem" > "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem.md5"
-  echo "Using openssl to prepare certificate..."
-  cat "/etc/letsencrypt/live/${MAINDOMAIN}/chain.pem" >> "${CATEMPFILE}"
+  #echo "Using openssl to prepare certificate..."
+  #cat "/etc/letsencrypt/live/${MAINDOMAIN}/chain.pem" >> "${CATEMPFILE}"
   openssl pkcs12 -export  -passout pass:aircontrolenterprise \
           -in "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem" \
           -inkey "/etc/letsencrypt/live/${MAINDOMAIN}/privkey.pem" \
-          -out "${TEMPFILE}" -name unifi \
-          -CAfile "${CATEMPFILE}" -caname root
-
+          -out "${TEMPFILE}" -name unifi
+  
   echo "Stopping Unifi controller..."
   service unifi stop
+  
+  echo "Importing root LE CA cert and intermediaries..."
+  keytool -import -trustcacerts -alias root -file "${CATEMPFILE}" \
+          -storepass aircontrolenterprise -keystore "${KEYSTORE}"
+          
+  keytool -import -trustcacerts -alias intermediate1 -file "${INTERMEDTEMPFILE}" \
+          -storepass aircontrolenterprise -keystore "${KEYSTORE}"
+
 
   echo "Removing existing certificate from Unifi protected keystore..."
   keytool -delete -alias unifi -keystore /usr/lib/unifi/data/keystore \
           -deststorepass aircontrolenterprise
 
-  echo "Inserting certificate into Unifi keystore..."
-  keytool -trustcacerts -importkeystore \
+  echo "Importing certificate into Unifi keystore..."
+  keytool -importkeystore \
           -deststorepass aircontrolenterprise \
           -destkeypass aircontrolenterprise \
           -destkeystore /usr/lib/unifi/data/keystore \
           -srckeystore "${TEMPFILE}" -srcstoretype PKCS12 \
           -srcstorepass aircontrolenterprise \
           -alias unifi
-  rm -f "${TEMPFILE}" "${CATEMPFILE}"
+  rm -f "${TEMPFILE}" "${CATEMPFILE}" "${INTERMEDTEMPFILE}"
 
   echo "Starting Unifi controller..."
   service unifi start
