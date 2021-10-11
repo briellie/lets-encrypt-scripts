@@ -2,7 +2,7 @@
 # Modified script from here: https://github.com/FarsetLabs/letsencrypt-helper-scripts/blob/master/letsencrypt-unifi.sh
 # Modified by: Brielle Bruns <bruns@2mbit.com>
 # Download URL: https://source.sosdg.org/brielle/lets-encrypt-scripts
-# Version: 1.99
+# Version: 1.99.1
 # Last Changed: 10/10/2021
 # 02/02/2016: Fixed some errors with key export/import, removed lame docker requirements
 # 02/27/2016: More verbose progress report
@@ -14,30 +14,33 @@
 # 09/26/2018: Change from TLS to HTTP authenticator
 # 09/22/2021: Update root certs
 # 10/10/2021: Split out import process for root certs, and fix quirkiness with cert chains
+# 10/11/2021: Minor fixes, add keystore cli opt, variable references
 
 # Location of LetsEncrypt binary we use.  Leave unset if you want to let it find automatically
 #LEBINARY="/usr/src/letsencrypt/certbot-auto"
 
 PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-KEYSTORE=/usr/lib/unifi/data/keystore
+KEYSTORE=""/usr/lib/unifi/data/keystore"
 
 
 function usage() {
-  echo "Usage: $0 -d <domain> [-e <email>] [-r] [-i]"
+  echo "Usage: $0 -d <domain> [-e <email>] [-r] [-i] [-k <keystore>]"
   echo "  -d <domain>: The domain name to use."
   echo "  -e <email>: Email address to use for certificate."
   echo "  -r: Renew domain."
   echo "  -i: Insert only, use to force insertion of certificate."
-  echo "  -a: use ace.jar for insert instead of keytool."
+  echo "  -k: Specify keystore to use."
+  echo "  -h: This usage description."
 }
 
-while getopts "hird:e:" opt; do
+while getopts "hird:e:k:" opt; do
   case $opt in
     i) onlyinsert="yes";;
     r) renew="yes";;
     d) domains+=("$OPTARG");;
     e) email="$OPTARG";;
+    k) userkeystore="$OPTARG";;
     h) usage
        exit;;
   esac
@@ -90,6 +93,10 @@ else
   email=""
 fi
 
+if [[ ! -z ${userkeystore} ]]; then
+  KEYSTORE="${userkeystore}"
+fi
+
 shift $((OPTIND -1))
 for val in "${domains[@]}"; do
         DOMAINS="${DOMAINS} -d ${val} "
@@ -111,8 +118,7 @@ fi
 
 if [[ ${onlyinsert} != "yes" ]]; then
   echo "Firing up standalone authenticator on TCP port 80 and requesting cert..."
-  ${LEBINARY} --server https://acme-v02.api.letsencrypt.org/directory \
-              --agree-tos --standalone --preferred-challenges http ${LEOPTIONS}
+  ${LEBINARY} --agree-tos --standalone --preferred-challenges http ${LEOPTIONS}
 fi
 
 if [[ ${onlyinsert} != "yes" ]] && md5sum -c "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem.md5" &>/dev/null; then
@@ -224,7 +230,7 @@ _EOF
   keytool -importkeystore \
           -deststorepass aircontrolenterprise \
           -destkeypass aircontrolenterprise \
-          -destkeystore /usr/lib/unifi/data/keystore \
+          -destkeystore ${KEYSTORE} \
           -srckeystore "${TEMPFILE}" -srcstoretype PKCS12 \
           -srcstorepass aircontrolenterprise \
           -alias unifi -noprompt
