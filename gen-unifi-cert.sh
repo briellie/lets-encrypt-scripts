@@ -21,7 +21,7 @@
 
 PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-KEYSTORE=""/usr/lib/unifi/data/keystore"
+KEYSTORE="/usr/lib/unifi/data/keystore"
 
 
 function usage() {
