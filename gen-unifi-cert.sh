@@ -2,8 +2,8 @@
 # Modified script from here: https://github.com/FarsetLabs/letsencrypt-helper-scripts/blob/master/letsencrypt-unifi.sh
 # Modified by: Brielle Bruns <bruns@2mbit.com>
 # Download URL: https://source.sosdg.org/brielle/lets-encrypt-scripts
-# Version: 1.9
-# Last Changed: 09/22/2021
+# Version: 1.92
+# Last Changed: 10/10/2021
 # 02/02/2016: Fixed some errors with key export/import, removed lame docker requirements
 # 02/27/2016: More verbose progress report
 # 03/08/2016: Add renew option, reformat code, command line options
@@ -206,15 +206,15 @@ _EOF
   
   echo "Importing root LE CA cert and intermediaries..."
   keytool -import -trustcacerts -alias root -file "${CATEMPFILE}" \
-          -storepass aircontrolenterprise -keystore "${KEYSTORE}"
+          -storepass aircontrolenterprise -keystore "${KEYSTORE}" -noprompt
           
   keytool -import -trustcacerts -alias intermediate1 -file "${INTERMEDTEMPFILE}" \
-          -storepass aircontrolenterprise -keystore "${KEYSTORE}"
+          -storepass aircontrolenterprise -keystore "${KEYSTORE}" -noprompt
 
 
-  echo "Removing existing certificate from Unifi protected keystore..."
-  keytool -delete -alias unifi -keystore /usr/lib/unifi/data/keystore \
-          -deststorepass aircontrolenterprise
+  #echo "Removing existing certificate from Unifi protected keystore..."
+  #keytool -delete -alias unifi -keystore /usr/lib/unifi/data/keystore \
+  #        -deststorepass aircontrolenterprise
 
   echo "Importing certificate into Unifi keystore..."
   keytool -importkeystore \
@@ -223,7 +223,7 @@ _EOF
           -destkeystore /usr/lib/unifi/data/keystore \
           -srckeystore "${TEMPFILE}" -srcstoretype PKCS12 \
           -srcstorepass aircontrolenterprise \
-          -alias unifi
+          -alias unifi -noprompt
   rm -f "${TEMPFILE}" "${CATEMPFILE}" "${INTERMEDTEMPFILE}"
 
   echo "Starting Unifi controller..."
