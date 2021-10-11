@@ -204,6 +204,14 @@ _EOF
   echo "Stopping Unifi controller..."
   service unifi stop
   
+  echo "Removing existing certificates from Unifi protected keystore..."
+  keytool -delete -alias unifi -keystore "${KEYSTORE}" \
+          -deststorepass aircontrolenterprise -noprompt
+  keytool -delete -alias root -keystore "${KEYSTORE}" \
+          -deststorepass aircontrolenterprise -noprompt
+  keytool -delete -alias intermediate1 -keystore "${KEYSTORE}" \
+          -deststorepass aircontrolenterprise -noprompt
+  
   echo "Importing root LE CA cert and intermediaries..."
   keytool -import -trustcacerts -alias root -file "${CATEMPFILE}" \
           -storepass aircontrolenterprise -keystore "${KEYSTORE}" -noprompt
@@ -211,10 +219,6 @@ _EOF
   keytool -import -trustcacerts -alias intermediate1 -file "${INTERMEDTEMPFILE}" \
           -storepass aircontrolenterprise -keystore "${KEYSTORE}" -noprompt
 
-
-  #echo "Removing existing certificate from Unifi protected keystore..."
-  #keytool -delete -alias unifi -keystore /usr/lib/unifi/data/keystore \
-  #        -deststorepass aircontrolenterprise
 
   echo "Importing certificate into Unifi keystore..."
   keytool -importkeystore \
