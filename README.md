@@ -1,6 +1,6 @@
 # Lets Encrypt Scripts
 
-Public Git URL: https://source.sosdg.org/brielle/lets-encrypt-scripts
+Public Git URL: https://git.sosdg.org/brielle/lets-encrypt-scripts
 
 By: Brielle Bruns <bruns@2mbit.com>
 
