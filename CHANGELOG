@@ -1,3 +1,8 @@
+03/24/2024
+	- Add legacy option for OpenSSL 3.x
+		Fixes issue here:
+		https://community.ui.com/questions/New-Openssl-v3-may-break-your-controller-network-application-keystore/2e4133d9-d6dd-4a22-acfe-e5d671ffaee4
+
 04/04/2016
 	- Minor updates to URLs in files
 	- Add sanity checking to gen-cert.sh like whats in gen-unifi-cert.sh

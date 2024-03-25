@@ -2,8 +2,8 @@
 # Modified script from here: https://github.com/FarsetLabs/letsencrypt-helper-scripts/blob/master/letsencrypt-unifi.sh
 # Modified by: Brielle Bruns <bruns@2mbit.com>
 # Download URL: https://source.sosdg.org/brielle/lets-encrypt-scripts
-# Version: 1.99.1
-# Last Changed: 10/10/2021
+# Version: 1.99.10
+# Last Changed: 03/24/2024
 # 02/02/2016: Fixed some errors with key export/import, removed lame docker requirements
 # 02/27/2016: More verbose progress report
 # 03/08/2016: Add renew option, reformat code, command line options
@@ -15,6 +15,7 @@
 # 09/22/2021: Update root certs
 # 10/10/2021: Split out import process for root certs, and fix quirkiness with cert chains
 # 10/11/2021: Minor fixes, add keystore cli opt, variable references
+# 03/24/2024: Adds legacy option for OpenSSL 3.x to fix issue with keystore format
 
 # Location of LetsEncrypt binary we use.  Leave unset if you want to let it find automatically
 #LEBINARY="/usr/src/letsencrypt/certbot-auto"
@@ -25,13 +26,14 @@ KEYSTORE="/usr/lib/unifi/data/keystore"
 
 
 function usage() {
-  echo "Usage: $0 -d <domain> [-e <email>] [-r] [-i] [-k <keystore>]"
+  echo "Usage: $0 -d <domain> [-e <email>] [-r] [-i] [-k <keystore>] [-l]"
   echo "  -d <domain>: The domain name to use."
   echo "  -e <email>: Email address to use for certificate."
   echo "  -r: Renew domain."
   echo "  -i: Insert only, use to force insertion of certificate."
   echo "  -k: Specify keystore to use."
   echo "  -h: This usage description."
+  echo "  -l: Use OpenSSL 3.x legacy option."
 }
 
 while getopts "hird:e:k:" opt; do
@@ -41,6 +43,7 @@ while getopts "hird:e:k:" opt; do
     d) domains+=("$OPTARG");;
     e) email="$OPTARG";;
     k) userkeystore="$OPTARG";;
+    l) uselegacy="yes";;
     h) usage
        exit;;
   esac
@@ -85,6 +88,12 @@ fi
 if [[ ! -x $( which openssl ) ]]; then
   echo "Error: OpenSSL binary not found."
   exit 1
+fi
+
+if [[ ! -z ${uselegacy} ]]; then
+  osslopt=" -legacy"
+else
+  osslopt=""
 fi
 
 if [[ ! -z ${email} ]]; then
@@ -202,7 +211,7 @@ _EOF
   md5sum "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem" > "/etc/letsencrypt/live/${MAINDOMAIN}/cert.pem.md5"
   #echo "Using openssl to prepare certificate..."
   #cat "/etc/letsencrypt/live/${MAINDOMAIN}/chain.pem" >> "${CATEMPFILE}"
-  openssl pkcs12 -export  -passout pass:aircontrolenterprise \
+  openssl pkcs12 -export ${osslopt} -passout pass:aircontrolenterprise \
           -in "/etc/letsencrypt/live/${MAINDOMAIN}/fullchain.pem" \
           -inkey "/etc/letsencrypt/live/${MAINDOMAIN}/privkey.pem" \
           -out "${TEMPFILE}" -name unifi
