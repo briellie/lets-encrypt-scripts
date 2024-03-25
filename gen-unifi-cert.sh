@@ -36,7 +36,7 @@ function usage() {
   echo "  -l: Use OpenSSL 3.x legacy option."
 }
 
-while getopts "hird:e:k:" opt; do
+while getopts "hirdl:e:k:" opt; do
   case $opt in
     i) onlyinsert="yes";;
     r) renew="yes";;
